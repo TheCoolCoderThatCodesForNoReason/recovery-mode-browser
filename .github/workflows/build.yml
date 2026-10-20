@@ -1,0 +1,31 @@
+
+name: Build Webcover
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Webcover.cpp"
+      - ".github/workflows/build.yml"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Webcover
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          if (-not $vs) { throw "Visual Studio not found" }
+          $devcmd = Join-Path $vs "Common7\Tools\VsDevCmd.bat"
+          cmd /c "`"$devcmd`" -arch=x64 && cl /nologo /EHsc /O2 /MT Webcover.cpp winhttp.lib /Fe:Webcover.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Compilation failed" }
+
+      - name: Upload Webcover
+        uses: actions/upload-artifact@v4
+        with:
+          name: Webcover
+          path: Webcover.exe
